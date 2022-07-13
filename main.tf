@@ -3,11 +3,11 @@
 ## Copyright @ CloudDrove. All Right Reserved.
 
 locals {
-  # some ses resources don't allow for the terminating '.' in the domain name
-  # so use a replace function to strip it out
-  stripped_domain_name      = replace(var.domain, "/[.]$/", "")
+#   # some ses resources don't allow for the terminating '.' in the domain name
+#   # so use a replace function to strip it out
+#   stripped_domain_name      = replace(var.domain, "/[.]$/", "")
   stripped_mail_from_domain = replace(var.mail_from_domain, "/[.]$/", "")
-  dash_domain               = replace(var.domain, ".", "-")
+#   dash_domain               = replace(var.domain, ".", "-")
 }
 
 #Module      : DOMAIN IDENTITY
@@ -32,7 +32,7 @@ resource "aws_ses_domain_identity_verification" "default" {
 resource "aws_route53_record" "ses_verification" {
   count   = var.zone_id != "" ? 1 : 0
   zone_id = var.zone_id
-  name    = "_amazonses"
+  name    = var.domain
   type    = var.txt_type
   ttl     = "600"
   records = [aws_ses_domain_identity.default[count.index].verification_token]

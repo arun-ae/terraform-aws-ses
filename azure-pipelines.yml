@@ -1,0 +1,71 @@
+variables:
+  MajorVersion: 0
+  MinorVersion: 1
+  PatchVersion: 0
+
+pr:
+  branches:
+    include:
+    - master
+    - release/*
+
+name: $(MajorVersion).$(MinorVersion).$(PatchVersion).$(Rev:r)
+
+jobs:
+ - job: Build_DV1
+   pool:
+     vmImage: 'ubuntu-latest'
+   steps:
+   - task: UsePythonVersion@0
+     inputs:
+       versionSpec: 3.x
+       architecture: 'x64'
+   - script: |
+       python -m pip install --upgrade pip setuptools wheel
+       pip install -r requirements.txt
+       pip install unittest-xml-reporting
+     displayName: 'Install prerequisites'
+
+   # Excluding the unwanted files in Dev Environment
+   - script: |
+      #rm -rf "dba-instance-profile.tf"
+     workingDirectory: '$(System.DefaultWorkingDirectory)'
+     displayName: 'Excluding files in DEV Environment'  
+   
+   - task: AmazonWebServices.aws-vsts-tools.AWSShellScript.AWSShellScript@1
+     displayName: 'terraform validate'
+     inputs:
+       awsCredentials: devsand_ar
+       regionName: 'us-east-1'
+       scriptType: inline
+       inlineScript: |
+         export ENVIRONMENT=DV1
+         make install_terraform_linux
+         make terraform_rename
+         make terraform_validate
+       workingDirectory: '$(System.DefaultWorkingDirectory)/terraform-aws-ses'
+   
+   - task: AmazonWebServices.aws-vsts-tools.AWSShellScript.AWSShellScript@1
+     displayName: 'terraform plan'
+     inputs:
+       awsCredentials: devsand_ar
+       regionName: 'us-east-1'
+       scriptType: inline
+       inlineScript: |
+         export ENVIRONMENT=DV1
+         make terraform_plan
+       workingDirectory: '$(System.DefaultWorkingDirectory)/terraform-aws-ses'
+   - bash: |
+      rm -rf ".terraform"
+      rm -rf "terraform"
+      rm -rf ".git"
+      rm -rf ".gitignore"
+      rm -rf "terraform_$(TerraformVersion)_windows_amd64.zip"
+     workingDirectory: '$(Build.SourcesDirectory)'
+     displayName: 'remove unwanted folders'
+   
+   - task: PublishBuildArtifacts@1
+     displayName: 'Publish Artifact: terraform-aws-ses'
+     inputs:
+       PathtoPublish: '$(Build.SourcesDirectory)'
+       ArtifactName: terraform-aws-ses

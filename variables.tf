@@ -63,7 +63,7 @@ variable "enable_template" {
 
 variable "mail_from_domain" {
   type        = string
-  default     = ""
+  default     = "dev.sandbox.aenetworks.com"
   description = "Subdomain (of the route53 zone) which is to be used as MAIL FROM address."
 }
 
